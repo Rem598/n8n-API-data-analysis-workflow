@@ -1,0 +1,151 @@
+{
+  "name": "Daily Analysis Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            },
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -64,
+        48
+      ],
+      "id": "373c7dde-45af-4cf0-bd62-2ee752ea4746",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd,eur",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        112,
+        48
+      ],
+      "id": "f2d641f4-6d73-4174-a271-709516ce107a",
+      "name": "HTTP Request",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// This is the Standardize Data (Function Node)\n\nconst results = [];\n\nfor (const item of items) {\n    let standardizedItem = {};\n\n    // -----------------------------------------------------------\n    // PART 1: Handle File Data (Binary Conversion)\n    // This runs if data came from the Read File node (CSV/Excel)\n    // -----------------------------------------------------------\n    if (item.binary && item.binary.data) {\n        // NOTE: In a production flow, you would call a parser here (e.g., CSV parser).\n        // For testing, we ensure a clean output structure.\n        \n        // This line is the placeholder for the file content conversion\n        const fileContentString = item.binary.data.toString('utf8'); \n        \n        standardizedItem = {\n            source: 'FILE',\n            // Truncate the content for display/testing\n            data_preview: fileContentString.substring(0, 100) + '...'\n        };\n        \n        // Push the file item directly for the next node to handle\n        results.push({ json: standardizedItem });\n        \n    } else {\n    // -----------------------------------------------------------\n    // PART 2: Handle API Data (JSON Object Transformation)\n    // This runs if data came from the HTTP Request node\n    // -----------------------------------------------------------\n        const apiData = item.json;\n\n        // CHECK 1: If the API response is a single ARRAY (like JSONPlaceholder)\n        if (Array.isArray(apiData)) {\n            // If it's an array, process each element as a separate item\n            apiData.forEach(record => {\n                results.push({ \n                    json: {\n                        source: 'API_ARRAY_RECORD',\n                        // Keep the entire record JSON for the next node (Analysis)\n                        raw_data: record \n                    } \n                });\n            });\n            \n        // CHECK 2: If the API response is a single OBJECT (like CoinGecko)\n        } else if (typeof apiData === 'object' && apiData !== null) {\n            \n            // Iterate over the keys (e.g., 'bitcoin', 'ethereum')\n            for (const key in apiData) {\n                if (apiData.hasOwnProperty(key)) {\n                    results.push({\n                        json: {\n                            source: 'API_OBJECT_KEY',\n                            asset_key: key,\n                            // Keep the entire value object (e.g., {'usd': 67000})\n                            raw_data: apiData[key]\n                        }\n                    });\n                }\n            }\n        }\n    }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        96
+      ],
+      "id": "32ea71ae-22d3-4ed9-a46a-86da2bbc52dc",
+      "name": "Code in JavaScript",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code calculates the average body length (our simple KPI).\n\n// 1. Calculate the sum of all 'body_length' values.\nconst totalLength = items.reduce((sum, item) => sum + item.json.body_length, 0);\n\n// 2. Calculate the average.\nconst averageLength = totalLength / items.length;\n\n// 3. Output a single, clean result (the KPI).\nreturn [{\n  json: {\n    total_posts: items.length,\n    average_body_length: averageLength.toFixed(2)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        144
+      ],
+      "id": "58ad8647-ea2a-4991-ab09-08e2c42c2a79",
+      "name": "Code in JavaScript1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fromEmail": "remadatas@gmail.com",
+        "toEmail": "rehemamunto@gmail.com",
+        "subject": "Daily Data Agent Report ",
+        "html": "=Daily Analysis Complete!\n\n-- Insights --\nTotal Posts Analyzed: {{ $json.total_posts }}\nAverage Body Length:{{ $json.average_body_length }}\n\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        576,
+        208
+      ],
+      "id": "5ac0a7df-030b-488c-aa12-67416eee51a0",
+      "name": "Send email",
+      "webhookId": "03d1fefb-caa6-47ac-95cc-85041e8c2285",
+      "credentials": {
+        "smtp": {
+          "id": "LQWcBorPDIRgt1l6",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6e335fee-66e9-4dc8-922f-34e9b81fdb5e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "57fd54d34679e2ebf61ac01f0782aae54a759edccaca9c3f931bf9bc36f81ed4"
+  },
+  "id": "DkehuWPbxNty1eLJ",
+  "tags": []
+}
