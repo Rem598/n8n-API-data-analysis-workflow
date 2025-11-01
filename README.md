@@ -6,30 +6,30 @@ This workflow retrieves data from an external API, processes it, formats the out
 
 Workflow Steps
 
-Schedule Trigger – Sets when the workflow runs (e.g., daily).
+- Schedule Trigger – Sets when the workflow runs (e.g., daily).
 
-HTTP Request – Retrieves data from the target API.
+- HTTP Request – Retrieves data from the target API.
 
-Code Node (Extraction) – Filters and restructures the raw response.
+- Code Node (Extraction) – Filters and restructures the raw response.
 
-Code Node (Formatting) – Builds the final report message.
+- Code Node (Formatting) – Builds the final report message.
 
-Send Email – Delivers the formatted output to the configured recipient.
+- Send Email – Delivers the formatted output to the configured recipient.
 
 Import Instructions
 
-In n8n, go to Workflows → Import from File
+- In n8n, go to Workflows → Import from File
 
-Upload the provided .json file
+- Upload the provided .json file
 
-Add your API and email credentials
+- Add your API and email credentials
 
-Activate the workflow
+- Activate the workflow
 
 Requirements
 
-n8n instance (self-hosted or cloud)
+- n8n instance (self-hosted or cloud)
 
-Valid API endpoint
+- Valid API endpoint
 
-SMTP credentials for email delivery
+- SMTP credentials for email delivery
